@@ -18,12 +18,16 @@ from ctypes import windll
 import pandas as pd
 
 from analysis import Analysis
-from console import Console
-from options import Options
+from media import Media
+from src.components.console import Console
+from src.components.options import Options
+from src.components.combo import Combo
+from src.components.graph import Graph
+
 
 
 class Gui:
-    def __init(self, root):
+    def __init__(self, root):
         self.root = root
         self.root.geometry("1200x800")
         self.root.title("CrystalEyes v0.9.0")
@@ -54,7 +58,7 @@ class Gui:
         self.paned_window.pack(fill=tk.BOTH, expand=True)
 
         # media panel
-        self.media_frame = ttk.Frame(self.paned_window, orient=tk.VERTICAL)
+        self.media_frame = ttk.Frame(self.paned_window, height=1, padding=(0, 10))
         self.paned_window.add(self.media_frame, weight=10)
         # TODO define self.open_file and self.set_px_entry methods
         self.media = Media(self.media_frame, self.open_file, self.set_px_entry)
@@ -72,6 +76,577 @@ class Gui:
         self.right.pack(fill=tk.BOTH, expand=True, padx=(10, 20), pady=20)
 
         self.graphs = []
+        for i in range(3):
+            graph_container = ttk.Frame(self.right)
+            graph_container.place(rely=(i / 3), relwidth=1, relheight=(1 / 3))
+            self.graphs.append(Graph(graph_container))
+
+        self.config_event_entries()
+
+        sv_ttk.set_theme('light')
+        self.root.after(100, lambda: self.root.state('zoomed'))
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
+
+        # run GUI
+        self.root.mainloop()
+
+    # ################################ GUI DESIGN ################################ #
+
+    def add_control(self):
+        self.tab_control = ttk.Notebook(self.left)
+        self.tab1 = ttk.Frame(self.tab_control)
+        self.tab2 = ttk.Frame(self.tab_control)
+        self.tab3 = ttk.Frame(self.tab_control)
+        self.tab4 = ttk.Frame(self.tab_control)
+        self.tab5 = ttk.Frame(self.tab_control)
+        self.add_tab1()
+        self.add_tab2()
+        self.add_tab3()
+        self.add_tab4()
+        self.add_tab5()
+        self.tab_control.add(self.tab1, text="File")
+        self.tab_control.add(self.tab2, text="Scale")
+        self.tab_control.add(self.tab3, text="View")
+        self.tab_control.add(self.tab4, text="Image Options")
+        self.tab_control.add(self.tab5, text="Video Options")
+        self.tab_control.pack(fill=tk.X, pady=(0, 10), expand=False)
+
+    def add_tab1(self):
+        """ File options """
+        self.open_file_button = ttk.Button(self.tab1, text="Open File")
+        self.open_file_button.grid(row=0, column=0, padx=self.PAD_NOPAD, pady=10)
+
+        self.reset_button1 = ttk.Button(self.tab1, text="Reset Media")
+        self.reset_button1.grid(row=0, column=2, padx=self.PAD_NOPAD, pady=10)
+
+        self.clear_button = ttk.Button(self.tab1, text="Clear Media")
+        self.clear_button.grid(row=0, column=1, padx=self.PAD_NOPAD, pady=10)
+
+    def add_tab2(self):
+        """ Image scaling options """
+
+        self.tab2_row1 = ttk.Frame(self.tab2)
+        self.tab2_row1.pack(fill=tk.BOTH, expand=True)
+
+        self.scale_label = ttk.Label(self.tab2_row1, text="Scale:")
+        self.scale_label.grid(row=0, column=0, padx=self.PAD_NOPAD, pady=self.PAD_NOPAD)
+
+        self.scale_input = tk.StringVar()
+        self.scale_entry = ttk.Entry(self.tab2_row1, textvariable=self.scale_input, width=10)
+        self.scale_entry.grid(row=0, column=1, padx=self.PAD_NOPAD, pady=self.PAD_NOPAD)
+
+        self.unit_label = ttk.Label(self.tab2_row1, text="μm / px")
+        self.unit_label.grid(row=0, column=2, padx=(5, 0), pady=self.PAD_NOPAD)
+
+        self.reset_scale_button = ttk.Button(self.tab2_row1, text="Reset")
+        self.reset_scale_button.grid(row=0, column=3, padx=self.PAD_NOPAD, pady=self.PAD_NOPAD)
+
+        self.manual_scale_button = ttk.Button(self.tab2_row1, text="Manual Scaling")
+        self.manual_scale_button.grid(row=0, column=4, padx=self.PAD_NOPAD, pady=self.PAD_NOPAD)
+
+        self.tab2_row2 = ttk.Frame(self.tab2)
+        self.tab2_row2.pack(fill=tk.BOTH, expand=True)
+
+        self.px_input = tk.StringVar()
+        self.px_entry = ttk.Entry(self.tab2_row2, textvariable=self.px_input, width=10)
+        self.px_entry.grid(row=0, column=0, padx=self.PAD_NOPAD, pady=10)
+
+        self.px_label = ttk.Label(self.tab2_row2, text="pixels is equal to ")
+        self.px_label.grid(row=0, column=1, padx=(5, 0), pady=10)
+
+        self.um_input = tk.StringVar()
+        self.um_entry = ttk.Entry(self.tab2_row2, textvariable=self.um_input, width=10)
+        self.um_entry.grid(row=0, column=2, padx=(5, 0), pady=10)
+
+        self.um_label = ttk.Label(self.tab2_row2, text="μm")
+        self.um_label.grid(row=0, column=3, padx=(5, 0), pady=10)
+
+    def add_tab3(self):
+        """ Viewing options """
+
+        self.tab3_row1 = ttk.Frame(self.tab3)
+        self.tab3_row1.pack(fill=tk.BOTH, expand=True)
+
+        self.reset_button2 = ttk.Button(self.tab3_row1, text="Reset Media")
+        self.reset_button2.grid(row=0, column=0, padx=self.PAD_NOPAD, pady=self.PAD_NOPAD)
+
+        self.auto_crop_button = ttk.Button(self.tab3_row1, text="Auto Crop")
+        self.auto_crop_button.grid(row=0, column=1, padx=self.PAD_NOPAD, pady=self.PAD_NOPAD)
+
+        self.save_view_button = ttk.Button(self.tab3_row1, text="Save View")
+        self.save_view_button.grid(row=0, column=2, padx=self.PAD_NOPAD, pady=self.PAD_NOPAD)
+
+        self.process_media_button = ttk.Button(self.tab3_row1, text="Process media")
+        self.process_media_button.grid(row=0, column=3, padx=self.PAD_NOPAD, pady=self.PAD_NOPAD)
+
+        self.tab3_row2 = ttk.Frame(self.tab3)
+        self.tab3_row2.pack(fill=tk.BOTH, expand=True)
+
+        self.change_view_label = ttk.Label(self.tab3_row2, text="Drag on the image to change the view")
+        self.change_view_label.grid(row=0, column=0, padx=self.PAD_NOPAD, pady=10)
+
+    def add_tab4(self):
+        """ Image options """
+
+        self.tab4_row1 = ttk.Frame(self.tab4)
+        self.tab4_row1.pack(fill=tk.BOTH, expand=True)
+
+        self.image_combos = []
+        for i in range(3):
+            label = ttk.Label(self.tab4_row1, text=f"Graph {i + 1}:", width=8)
+            label.grid(row=0, column=(i * 2), padx=self.PAD_NOPAD, pady=self.PAD_NOPAD)
+
+            combo = Combo(self.tab4_row1, self.update_graphs_image, self.IMAGE_OPTIONS,
+                          self.options.get_image_graph(i + 1), width=10)
+            combo.grid(row=0, column=(i * 2 + 1), padx=self.NOPAD_PAD, pady=self.PAD_NOPAD)
+            self.image_combos.append(combo)
+
+        self.tab4_row2 = ttk.Frame(self.tab4)
+        self.tab4_row2.pack(fill=tk.BOTH, expand=True)
+
+        self.image_download_label = ttk.Label(self.tab4_row2, text="Save to folder:")
+        self.image_download_label.grid(row=0, column=0, padx=self.PAD_NOPAD, pady=10)
+
+        self.image_browse_button = ttk.Button(self.tab4_row2, text="Browse")
+        self.image_browse_button.grid(row=0, column=1, padx=self.PAD_NOPAD, pady=10)
+
+        self.image_folderpath = tk.StringVar()
+        self.image_folderpath_entry = ttk.Entry(self.tab4_row2, textvariable=self.image_folderpath, width=50)
+        self.image_folderpath_entry.grid(row=0, column=2, padx=self.PAD_NOPAD, pady=10)
+
+        self.image_download_button = ttk.Button(self.tab4_row2, text="Save Data")
+        self.image_download_button.grid(row=0, column=3, padx=self.PAD_NOPAD, pady=10)
+
+    def add_tab5(self):
+        """ Video options """
+
+        self.tab5_row1 = ttk.Frame(self.tab5)
+        self.tab5_row1.pack(fill=tk.BOTH, expand=True)
+
+        self.video_combos = []
+        for i in range(3):
+            label = ttk.Label(self.tab5_row1, text=f"Graph {i + 1}:", width=8)
+            label.grid(row=0, column=(i * 2), padx=self.PAD_NOPAD, pady=self.PAD_NOPAD)
+
+            combo = Combo(self.tab5_row1, self.update_graphs_video, self.VIDEO_OPTIONS,
+                          self.options.get_video_graph(i + 1), width=10)
+            combo.grid(row=0, column=(i * 2 + 1), padx=self.NOPAD_PAD, pady=self.PAD_NOPAD)
+            self.video_combos.append(combo)
+
+        self.tab5_row2 = ttk.Frame(self.tab5)
+        self.tab5_row2.pack(fill=tk.BOTH, expand=True)
+
+        self.video_download_label = ttk.Label(self.tab5_row2, text="Save to folder:")
+        self.video_download_label.grid(row=0, column=0, padx=self.PAD_NOPAD, pady=10)
+
+        self.video_browse_button = ttk.Button(self.tab5_row2, text="Browse")
+        self.video_browse_button.grid(row=0, column=1, padx=self.PAD_NOPAD, pady=10)
+
+        self.video_folderpath = tk.StringVar()
+        self.video_folderpath_entry = ttk.Entry(self.tab5_row2, textvariable=self.video_folderpath, width=50)
+        self.video_folderpath_entry.grid(row=0, column=2, padx=self.PAD_NOPAD, pady=10)
+
+        self.video_download_button = ttk.Button(self.tab5_row2, text="Save Data")
+        self.video_download_button.grid(row=0, column=3, padx=self.PAD_NOPAD, pady=10)
+
+    def config_event_entries(self):
+        """ Configures events and entries """
+
+        # tab control configs
+        self.tab_control.bind("<<NotebookTabChanged>>", self.check_tab_status)
+
+        # tab 1 configs
+        self.open_file_button.config(command=self.open_file)
+        self.reset_button1.config(command=self.media.show_raw)
+        self.clear_button.config(command=self.clear_media)
+
+        # tab 2 configs
+        self.reset_scale_button.config(command=self.reset_scale)
+        self.manual_scale_button.config(command=self.manual_scale)
+        self.set_px_entry(self.options.get_px())
+        self.scale_input.trace_add('write', self.scale_entry_updated)
+        self.set_um_entry(self.options.get_um())
+        self.px_input.trace_add('write', self.px_entry_updated)
+        self.set_scale_entry(self.options.get_scale())
+        self.um_input.trace_add('write', self.um_entry_updated)
+
+        # tab 3 configs
+        self.reset_button2.config(command=self.media.show_raw)
+        self.auto_crop_button.config(command=self.auto_crop)
+        self.save_view_button.config(command=self.save_view)
+        self.process_media_button.config(command=self.process_media)
+
+        # tab 4 configs
+        self.image_browse_button.config(command=self.image_browse)
+        self.image_folderpath.set(self.options.get_image_path())
+        self.image_folderpath.trace_add('write', self.image_folderpath_updated)
+        self.image_download_button.config(command=self.image_download)
+
+        # tab 5 configs
+        self.video_browse_button.config(command=self.video_browse)
+        self.video_folderpath.set(self.options.get_video_path())
+        self.video_folderpath.trace_add('write', self.video_folderpath_updated)
+        self.video_download_button.config(command=self.video_download)
+
+    # ################################ GENERAL METHODS ################################ #
+
+    def switch_tab(self, new_tab: int):
+        """ Changes currently displayed tab """
+        self.tab_control.select(new_tab)
+
+    def check_tab_status(self, event=None):
+        """ What should happen when a tab is selected """
+        if not self.media.there_is_media():
+            self.media.show_no_media()
+            return
+
+        tab_index = self.tab_control.index(self.tab_control.select())
+        if tab_index == 2 and self.media.uploaded == self.media.IMAGE_UPLOADED:
+            self.media.show_viewer()
+
+    def open_file(self):
+        """ User opens new file """
+        filepaths = filedialog.askopenfilenames(filetypes=[(
+            "Image and video files",
+            " ".join(self.media.IMAGE_TYPES + self.media.VIDEO_TYPES)
+        )])
+        num_files = len(filepaths)
+        if not num_files:
+            return
+
+        self.analysis.processed = False
+        self.media.add_media(filepaths)
+        self.check_tab_status()
+        self.clear_graphs()
+        first_file = filepaths[0]
+        if len(filepaths) != 1:
+            first_file = first_file[: first_file.rindex("/")]
+        self.console.message(f"'{first_file}' uploaded")
+
+    def clear_media(self):
+        """ Clears media """
+        if not self.media.there_is_media():
+            return
+        self.media.show_no_media()
+        self.clear_graphs()
+        self.console.message("Media cleared")
+
+    def no_media_error(self):
+        """ Shows message that there is currently no media """
+        self.console.error("no media")
+
+    def invalid_media_error(self):
+        """ Invalid type of media uploaded """
+        self.console.error("invalid media type")
+
+    def on_close(self):
+        """ What happens when the GUI window is closed """
+        self.options.write_options()
+        self.root.destroy()
+
+    def clear_graphs(self):
+        """ Clear all displayed graphs """
+        for graph in self.graphs:
+            graph.clear()
+
+    # ################################ TAB 2 METHODS ################################ #
+
+    def reset_scale(self):
+        """ Resets displayed scale in Scale tab """
+        self.set_scale_entry(Analysis.DEFAULT_SCALE)
+        self.set_px_entry(Analysis.DEFAULT_PX)
+        self.set_um_entry(Analysis.DEFAULT_UM)
+
+    def manual_scale(self):
+        """ Manually sets scale """
+        if not self.media.there_is_media():
+            self.no_media_error()
+            return
+        self.media.show_scaler()
+
+    def set_scale_entry(self, scale: float):
+        """ Sets value in scale entry, always rounds to 5 decimal points"""
+        if scale == self.scale_input.get():
+            return
+        self.scale_input.set(round(scale, 5))
+        try:
+            self.analysis.scale = float(self.scale_entry.get())
+        except:
+            return
+
+    def set_px_entry(self, px: float):
+        """ Sets value in pixel entry """
+        if px == self.scale_input.get():
+            return
+        self.px_input.set(round(px, 3))
+
+    def set_um_entry(self, um: float):
+        """ Sets value in um entry """
+        if um == self.scale_input.get():
+            return
+        self.um_input.set(um)
+
+    def get_input_values(self) -> tuple:
+        """ Gets all input values and tries to convert to float """
+        return (float(self.scale_input.get()), float(self.px_input.get()), float(self.um_input.get()))
+
+    def scale_entry_updated(self, arg1, arg2, arg3):
+        """ Callback for update to scale entry """
+        inputs = None
+        try:
+            inputs = self.get_input_values()
+        except:
+            self.console.error("non-integer character in scale input")
+            return
+        if 0 in inputs:
+            self.console.error("zero in scale input")
+            return
+        self.set_px_entry(inputs[2] / inputs[0])
+
+    def px_entry_updated(self, arg1, arg2, arg3):
+        """ Callback for update to px entry """
+        inputs = None
+        try:
+            inputs = self.get_input_values()
+        except:
+            self.console.error("non-integer character in px input")
+            return
+        if 0 in inputs:
+            self.console.error("zero in px input")
+            return
+        self.set_scale_entry(inputs[2] / inputs[1])
+
+    def um_entry_updated(self, arg1, arg2, arg3):
+        """ Callback for update to um entry """
+        inputs = None
+        try:
+            inputs = self.get_input_values()
+        except:
+            self.console.error("non-integer character in μm entry")
+            return
+        if 0 in inputs:
+            self.console.error("zero in μm input")
+            return
+        self.set_scale_entry(inputs[2] / inputs[1])
+
+    # ################################ TAB 3 METHODS ################################ #
+
+    def auto_crop(self):
+        """ Auto crops media """
+        if not self.media.there_is_media():
+            self.no_media_error()
+            return
+
+        if not self.media.uploaded == self.media.IMAGE_UPLOADED:
+            self.invalid_media_error()
+
+        self.media.update_current_image(self.analysis.default_crop(self.media.current_image))
+        self.check_tab_status()
+
+    def save_view(self):
+        """ Saves view and updates displayed image """
+        if not self.media.there_is_media() or not self.media.uploaded == self.media.IMAGE_UPLOADED:
+            self.no_media_error()
+            return
+        xs, ys = self.media.viewer_container.crop_points()
+        if xs == ys == [0, 0]:
+            return
+        if xs[1] - xs[0] > Analysis.MAX_X or ys[1] - ys[0] > Analysis.MAX_Y:
+            raise ValueError("Invalid image cropping dimensions: too large for given image, check Gui.save_view")
+        cropped_image = self.analysis.crop(self.media.current_image, xs, ys)
+        # self.media.show_image(cropped_image)
+        self.media.update_current_image(cropped_image)
+
+    def process_media(self):
+        """ Process media, updates displayed image and graphs """
+        if not self.media.there_is_media():
+            self.no_media_error()
+            return
+
+        # update graphs accordingly
+        if self.media.uploaded == self.media.IMAGE_UPLOADED:
+            processed_image = self.analysis.image_show_contours(self.media.current_image)
+
+            # do nothing if processing results yielded nothing
+            if not self.analysis.processed:
+                self.console.message("No results after predicting image")
+                return
+
+            # show processed image
+            self.media.update_current_image(processed_image)
+            self.update_graphs_image()
+            self.console.update(self.analysis.image_dataset_summary())
+            self.console.add_newline = True
+
+        elif self.media.uploaded == self.media.VIDEO_UPLOADED:
+            self.update_graphs_video()
+            self.console.update(self.analysis.video_dataset_summary(self.time_data[-1], self.temperature_data[-1]))
+            self.console.add_newline = True
+
+        else:
+            raise ValueError("Invalid uploaded state, check Gui.process_media")
+
+        # enable cropping if in view tab
+        self.check_tab_status()
+
+    # ################################ TAB 4 METHODS ################################ #
+
+    def image_browse(self):
+        """ User sets folder to save image data """
+        folderpath = filedialog.askdirectory()
+        if len(folderpath) == 0:
+            return
+        self.image_folderpath.set(folderpath)
+
+    def image_folderpath_updated(self, arg1, arg2, arg3):
+        """ Callback when image folderpath is updated """
+        self.options.set_image_path(self.image_folderpath.get())
+
+    def image_download(self):
+        """ User wants to download image data """
+        if not self.media.there_is_media():
+            self.no_media_error()
+            return
+
+        if not self.media.uploaded == self.media.IMAGE_UPLOADED:
+            self.invalid_media_error()
+            return
+
+        if not self.analysis.processed:
+            self.update_graphs_image()
+
+        filepath = self.media.image_filepath
+        filepath = f"{self.image_folderpath.get()}{filepath[filepath.rindex('/'): filepath.rindex('.')]}.xlsx"
+
+        data = {
+            "Contour": [i for i in range(self.analysis.num_contours)],
+            "Area in px²": self.analysis.areas_px,
+            "Area in μm²": self.analysis.areas_um,
+            "Number of sides": self.analysis.num_sides,
+            "Side ratio": self.analysis.side_ratios
+        }
+
+        image_df = pd.DataFrame(data)
+        image_df.to_excel(filepath)
+        self.console.message(f"Image data successfully saved to '{filepath}'")
+
+    def update_graphs_image(self):
+        for n, combo in enumerate(self.image_combos):
+            self.options.set_image_graph(n + 1, self.IMAGE_OPTIONS.index(combo.get()))
+
+        """ Updates graphs to show image data """
+        if not self.media.there_is_media() or not self.media.uploaded == self.media.IMAGE_UPLOADED:
+            return
+
+        if not self.analysis.processed:
+            return
+
+        for n, combo in enumerate(self.image_combos):
+            if combo.get() == self.IMAGE_OPTIONS[0]:
+                self.graphs[n].histogram("Area in px²", "px²", self.analysis.areas_px)
+            elif combo.get() == self.IMAGE_OPTIONS[1]:
+                self.graphs[n].histogram("Area in μm²", "μm²", self.analysis.areas_um)
+            elif combo.get() == self.IMAGE_OPTIONS[2]:
+                self.graphs[n].histogram("Length to width ratio", "Ratio", self.analysis.side_ratios)
+            elif combo.get() == self.IMAGE_OPTIONS[3]:
+                self.graphs[n].histogram("Number of sides", "Sides", self.analysis.num_sides)
+            else:
+                raise ValueError("Invalid image Combo value")
+
+    # ################################ TAB 5 METHODS ################################ #
+
+    def video_browse(self):
+        """ User sets folder to save video data """
+        folderpath = filedialog.askdirectory()
+        if len(folderpath) == 0:
+            return
+        self.video_folderpath.set(folderpath)
+
+    def video_folderpath_updated(self, arg1, arg2, arg3):
+        """ Callback when video folderpath is updated """
+        self.options.set_video_path(self.video_folderpath.get())
+
+    def video_download(self):
+        """ User wants to download video data """
+        if not self.media.there_is_media():
+            self.no_media_error()
+            return
+
+        if not self.media.uploaded == self.media.VIDEO_UPLOADED:
+            self.invalid_media_error()
+            return
+
+        if not self.analysis.processed:
+            self.update_graphs_video()
+
+        # determine path to save data to
+        first_image = self.media.video_container.image_filepaths[0]
+        first_name = first_image[first_image.rindex("/"):]
+
+        sample_name = first_image.replace(first_name, "")
+        sample_name = sample_name[sample_name.rindex("/"):].replace("/", "")
+
+        data = {
+            "Time(s)": self.time_data,
+            "Average area (μm²)": self.analysis.average_area_series,
+            "Total area (μm²)": self.analysis.total_area_series,
+            "Temperature (μm²)": self.temperature_data,
+            "# of sides": self.analysis.average_sides_series
+        }
+
+        video_df = pd.DataFrame(data)
+        filepath = f"{self.video_folderpath.get()}/{sample_name}.xlsx"
+        video_df.to_excel(filepath)
+        self.console.message(f"Video data successfully saved to '{filepath}'")
+
+    def update_graphs_video(self):
+        for n, combo in enumerate(self.video_combos):
+            self.options.set_video_graph(n + 1, self.VIDEO_OPTIONS.index(combo.get()))
+
+        """ Updates graphs to show video data """
+        if not self.media.there_is_media() or not self.media.uploaded == self.media.VIDEO_UPLOADED:
+            return
+
+        if not self.analysis.processed:
+            images = [cv2.imread(image) for image in self.media.video_container.image_filepaths]
+
+            cropped_images = []
+            self.time_data = []
+            self.temperature_data = []
+
+            for i, image in enumerate(images):
+                cropped_images.append(self.analysis.default_crop(image))
+
+                image_data = self.analysis.image_data(image)
+
+                if i == 0:
+                    start_time = image_data[0]
+                    self.time_data.append(0)
+                else:
+                    self.time_data.append(int((image_data[0] - start_time).total_seconds()))
+
+                self.temperature_data.append(image_data[1])
+
+            # self.analysis.analyze_video(cropped_images)
+            self.analysis.analyze_cellpose(self.media.video_container.image_filepaths)
+
+        # check combos and update graphs
+        for n, combo in enumerate(self.video_combos):
+            if combo.get() == self.VIDEO_OPTIONS[0]:
+                self.graphs[n].scatterplot("Number of objects", "# of objects", self.time_data,
+                                           self.analysis.num_contours_series)
+            elif combo.get() == self.VIDEO_OPTIONS[1]:
+                self.graphs[n].scatterplot("Average area", "Area in μm²", self.time_data,
+                                           self.analysis.average_area_series)
+            elif combo.get() == self.VIDEO_OPTIONS[2]:
+                self.graphs[n].scatterplot("Total area", "Area in μm²", self.time_data, self.analysis.total_area_series)
+            elif combo.get() == self.VIDEO_OPTIONS[3]:
+                self.graphs[n].scatterplot("Temperature", "°C", self.time_data, self.temperature_data)
+            elif combo.get() == self.VIDEO_OPTIONS[4]:
+                self.graphs[n].scatterplot("# of sides", "# of sidess", self.time_data,
+                                           self.analysis.average_sides_series)
+            else:
+                raise ValueError("Invalid image Combo value")
 
 
 

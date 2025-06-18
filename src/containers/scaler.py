@@ -21,7 +21,8 @@ from src.containers.container import MediaContainer
 
 
 class ScalerContainer(MediaContainer):
-    """ Container for graphically setting scale of media """
+    """ Container for graphically setting scale for media """
+
     def __init__(self, root, func: callable):
         super().__init__(root)
         self.update_scale_function = func
@@ -37,7 +38,7 @@ class ScalerContainer(MediaContainer):
         self.point1 = self.default1
         self.point2 = self.default2
 
-        self.line = Line2D(self.default1, self.default2, marker='o', color="yellow")
+        self.line = Line2D(self.default1, self.default2, marker='o', color='yellow')
         self.ax.add_line(self.line)
 
         self.cid_press = self.canvas.mpl_connect('button_press_event', self.on_click)
@@ -49,7 +50,7 @@ class ScalerContainer(MediaContainer):
 
 
     def show(self, image):
-        """ Show method for scaling graph """
+        """ Updated show method for scaling graph """
         super().show()
         self.ax.imshow(image)
         self.canvas.draw()
@@ -57,18 +58,18 @@ class ScalerContainer(MediaContainer):
 
 
     def on_click(self, event):
-        """ Reacts when a button is pressed"""
+        """ Reacts when button is pressed """
         if event.inaxes != self.ax:
             return
-        contains,  attr = self.line.contains(event)
+        contains, attr = self.line.contains(event)
         if contains:
             self.dragging_point = attr['ind'][0]
         else:
             self.dragging_point = None
 
 
-    def on_release(self):
-        """ Reacts when the buton is released"""
+    def on_release(self, event):
+        """ Reacts when button is released """
         self.dragging_point = None
         self.update_scale_function(self.get_distance())
 

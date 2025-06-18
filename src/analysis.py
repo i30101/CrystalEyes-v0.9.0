@@ -29,7 +29,7 @@ class Analysis:
     MAX_Y = 1536
     MAX_X = 2048
 
-    def __init(self):
+    def __init__(self):
         self.scale = Analysis.DEFAULT_SCALE
 
         
