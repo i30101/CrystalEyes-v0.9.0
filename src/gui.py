@@ -647,8 +647,3 @@ class Gui:
                                            self.analysis.average_sides_series)
             else:
                 raise ValueError("Invalid image Combo value")
-
-
-
-
-
