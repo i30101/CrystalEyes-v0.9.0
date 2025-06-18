@@ -17,7 +17,7 @@ import cv2
 from ctypes import windll
 import pandas as pd
 
-from analysis import Analysis
+from src.analysis.analysis import Analysis
 from media import Media
 from src.components.console import Console
 from src.components.options import Options

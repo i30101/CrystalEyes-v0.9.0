@@ -9,10 +9,6 @@ Media viewer
 """
 
 
-import tkinter as tk
-from tkinter import ttk
-
-import numpy as np
 import cv2
 
 from src.containers.empty import EmptyContainer

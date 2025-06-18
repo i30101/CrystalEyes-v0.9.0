@@ -12,7 +12,7 @@ Options for CrystalEyes
 import json
 from pathlib import Path
 
-from src.analysis import Analysis
+from src.analysis.analysis import Analysis
 
 
 class Options:

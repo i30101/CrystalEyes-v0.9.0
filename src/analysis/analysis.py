@@ -16,7 +16,7 @@ import numpy as np
 # TODO find a way to not use pytesseract
 # import pytesseract
 from datetime import datetime
-from cellpose import models, io
+# from cellpose import models, io
 
 
 class Analysis:
