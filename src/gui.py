@@ -37,10 +37,16 @@ class Gui:
     def __init__(self, root):
         self.root = root
         self.root.geometry("1200x800")
-        self.root.title("CrystalEyes v0.9.0")
+        self.root.title(Variables.APP_NAME)
 
         self.analysis = Analysis()
         self.options = Options()
+
+        Variables.image_filepath = tk.StringVar()
+        Variables.video_filepath = tk.StringVar()
+
+        Analysis.set_scale(self.options.get_scale())
+
 
 
         # ################################ LEFT COLUMN ################################ #
@@ -79,7 +85,6 @@ class Gui:
         # media panel
         self.media_frame = ttk.Frame(self.paned_window, height=1, padding=(0, 10))
         self.paned_window.add(self.media_frame, weight=10)
-        # TODO define self.open_file and self.set_px_entry methods
         self.media = Media(self.media_frame, self.open_file, self.set_px_entry)
 
         # console
@@ -102,7 +107,7 @@ class Gui:
 
         self.config_event_entries()
 
-        sv_ttk.set_theme('light')
+        sv_ttk.set_theme(self.options.get_theme())
         self.root.after(100, lambda: self.root.state('zoomed'))
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
@@ -122,6 +127,8 @@ class Gui:
         self.tab1.open_file_button.config(command=self.open_file)
         self.tab1.reset_button1.config(command=self.media.show_raw)
         self.tab1.clear_button.config(command=self.clear_media)
+        self.tab1.theme_button.config(command=self.theme_updated)
+        self.tab1.settings_button.config(command=self.settings_reset)
 
         # tab 2 configs
         self.tab2.reset_scale_button.config(command=self.reset_scale)
@@ -141,16 +148,14 @@ class Gui:
 
         # tab 4 configs
         self.tab4.image_browse_button.config(command=self.image_browse)
-        Variables.image_filepath = tk.StringVar()
         Variables.image_filepath.set(self.options.get_image_path())
-        Variables.image_filepath.trace_add('write', self.image_folderpath_updated)
+        Variables.image_filepath.trace_add('write', self.image_filepath_updated)
         self.tab4.image_download_button.config(command=self.image_download)
 
         # tab 5 configs
         self.tab5.video_browse_button.config(command=self.video_browse)
-        Variables.video_filepath = tk.StringVar()
         Variables.video_filepath.set(self.options.get_video_path())
-        Variables.video_filepath.trace_add('write', self.video_folderpath_updated)
+        Variables.video_filepath.trace_add('write', self.video_filepath_updated)
         self.tab5.video_download_button.config(command=self.video_download)
 
 
@@ -171,12 +176,35 @@ class Gui:
         if tab_index == 2 and self.media.uploaded == self.media.IMAGE_UPLOADED:
             self.media.show_viewer()
 
+    def no_media_error(self):
+        """ Shows message that there is currently no media """
+        self.console.error("no media")
+
+    def invalid_media_error(self):
+        """ Invalid type of media uploaded """
+        self.console.error("invalid media type")
+
+    def on_close(self):
+        """ What happens when the GUI window is closed """
+        self.options.write_options()
+        self.root.destroy()
+
+    def clear_graphs(self):
+        """ Clear all displayed graphs """
+        for graph in self.graphs:
+            graph.clear()
+
+
+
+
+    # ################################ TAB 1 METHODS ################################ #
+
     def open_file(self):
         """ User opens new file """
-        filepaths = filedialog.askopenfilenames(filetypes=[(
+        filepaths = tuple(filedialog.askopenfilenames(filetypes=[(
             "Image and video files",
             " ".join(self.media.IMAGE_TYPES + self.media.VIDEO_TYPES)
-        )])
+        )]))
         num_files = len(filepaths)
         if not num_files:
             return
@@ -198,23 +226,40 @@ class Gui:
         self.clear_graphs()
         self.console.message("Media cleared")
 
-    def no_media_error(self):
-        """ Shows message that there is currently no media """
-        self.console.error("no media")
+    def theme_updated(self):
+        """ Theme was updated """
+        if self.options.get_theme() == "light":
+            self.options.set_theme("dark")
+        elif self.options.get_theme() == "dark":
+            self.options.set_theme("light")
+        sv_ttk.set_theme(self.options.get_theme())
 
-    def invalid_media_error(self):
-        """ Invalid type of media uploaded """
-        self.console.error("invalid media type")
+    def settings_reset(self):
+        """ Settings were reset """
+        self.options.reset_options()
 
-    def on_close(self):
-        """ What happens when the GUI window is closed """
-        self.options.write_options()
-        self.root.destroy()
+        sv_ttk.set_theme(self.options.get_theme())
 
-    def clear_graphs(self):
-        """ Clear all displayed graphs """
-        for graph in self.graphs:
-            graph.clear()
+        Variables.image_filepath.set(self.options.get_image_path())
+        Variables.video_filepath.set(self.options.get_video_path())
+
+        for n, combo in enumerate(self.tab4.image_combos):
+            combo.set(Variables.IMAGE_OPTIONS[self.options.get_image_graph(n + 1)])
+
+        for n, combo in enumerate(self.tab5.video_combos):
+            combo.set(Variables.VIDEO_OPTIONS[self.options.get_video_graph(n + 1)])
+
+        self.set_scale_entry(self.options.get_scale())
+        self.set_px_entry(self.options.get_px())
+        self.set_um_entry(self.options.get_um())
+
+        self.media.show_no_media()
+        self.clear_graphs()
+        self.check_tab_status()
+
+        self.console.message("Settings reset to defaults")
+
+
 
     # ################################ TAB 2 METHODS ################################ #
 
@@ -272,6 +317,7 @@ class Gui:
             return
         self.set_px_entry(inputs[2] / inputs[0])
 
+
     def px_entry_updated(self, arg1, arg2, arg3):
         """ Callback for update to px entry """
         inputs = None
@@ -284,6 +330,7 @@ class Gui:
             self.console.error("zero in px input")
             return
         self.set_scale_entry(inputs[2] / inputs[1])
+
 
     def um_entry_updated(self, arg1, arg2, arg3):
         """ Callback for update to um entry """
@@ -358,17 +405,24 @@ class Gui:
         # enable cropping if in view tab
         self.check_tab_status()
 
+
+
+
+
+
+
+
     # ################################ TAB 4 METHODS ################################ #
 
     def image_browse(self):
         """ User sets folder to save image data """
-        folderpath = filedialog.askdirectory()
-        if len(folderpath) == 0:
+        filepath = filedialog.askdirectory()
+        if len(filepath) == 0:
             return
-        Variables.image_filepath.set(folderpath)
+        Variables.image_filepath.set(filepath)
 
-    def image_folderpath_updated(self, arg1, arg2, arg3):
-        """ Callback when image folderpath is updated """
+    def image_filepath_updated(self, arg1, arg2, arg3):
+        """ Callback when image filepath is updated """
         self.options.set_image_path(Variables.image_filepath.get())
 
     def image_download(self):
@@ -422,16 +476,22 @@ class Gui:
             else:
                 raise ValueError("Invalid image Combo value")
 
+
+
+
+
+
+
     # ################################ TAB 5 METHODS ################################ #
 
     def video_browse(self):
         """ User sets folder to save video data """
-        folderpath = filedialog.askdirectory()
-        if len(folderpath) == 0:
+        filepath = filedialog.askdirectory()
+        if len(filepath) == 0:
             return
-        self.video_folderpath.set(folderpath)
+        Variables.video_filepath.set(filepath)
 
-    def video_folderpath_updated(self, arg1, arg2, arg3):
+    def video_filepath_updated(self, arg1, arg2, arg3):
         """ Callback when video folderpath is updated """
         self.options.set_video_path(Variables.video_filepath.get())
 

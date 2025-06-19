@@ -47,9 +47,8 @@ class Nav5(ttk.Frame):
         self.video_browse_button = ttk.Button(self.tab5_row2, text="Browse")
         self.video_browse_button.grid(row=0, column=1, padx=Variables.PAD_NOPAD, pady=10)
 
-        self.video_folderpath = tk.StringVar()
-        self.video_folderpath_entry = ttk.Entry(self.tab5_row2, textvariable=self.video_folderpath, width=50)
-        self.video_folderpath_entry.grid(row=0, column=2, padx=Variables.PAD_NOPAD, pady=10)
+        self.video_filepath_entry = ttk.Entry(self.tab5_row2, textvariable=Variables.video_filepath, width=50)
+        self.video_filepath_entry.grid(row=0, column=2, padx=Variables.PAD_NOPAD, pady=10)
 
         self.video_download_button = ttk.Button(self.tab5_row2, text="Save Data")
         self.video_download_button.grid(row=0, column=3, padx=Variables.PAD_NOPAD, pady=10)

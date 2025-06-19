@@ -15,6 +15,8 @@ import tkinter as tk
 class Variables:
     """ Global variables and constants """
 
+    APP_NAME = "CrystalEyes v0.9.0"
+
     """ GUI padding"""
     PAD_NOPAD = (10, 0)
     NOPAD_PAD = (0, 10)

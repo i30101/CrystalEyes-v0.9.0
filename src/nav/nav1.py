@@ -20,11 +20,26 @@ class Nav1(ttk.Frame):
     def __init__(self, root):
         super().__init__(root)
 
-        self.open_file_button = ttk.Button(self, text="Open File")
+        self.tab1_row1 = ttk.Frame(self)
+        self.tab1_row1.pack(fill='both', expand=True)
+
+        self.open_file_button = ttk.Button(self.tab1_row1, text="Open File")
         self.open_file_button.grid(row=0, column=0, padx=Variables.PAD_NOPAD, pady=10)
 
-        self.reset_button1 = ttk.Button(self, text="Reset Media")
+        self.reset_button1 = ttk.Button(self.tab1_row1, text="Reset Media")
         self.reset_button1.grid(row=0, column=2, padx=Variables.PAD_NOPAD, pady=10)
 
-        self.clear_button = ttk.Button(self, text="Clear Media")
+        self.clear_button = ttk.Button(self.tab1_row1, text="Clear Media")
         self.clear_button.grid(row=0, column=1, padx=Variables.PAD_NOPAD, pady=10)
+
+
+        self.tab1_row2 = ttk.Frame(self)
+        self.tab1_row2.pack(fill='both', expand=True)
+
+        self.theme_button = ttk.Button(self.tab1_row2, text="Change Theme")
+        self.theme_button.grid(row=0, column=0, padx=Variables.PAD_NOPAD, pady=10)
+
+        self.settings_button = ttk.Button(self.tab1_row2, text="Reset Settings")
+        self.settings_button.grid(row=0, column=1, padx=Variables.PAD_NOPAD, pady=10)
+
+

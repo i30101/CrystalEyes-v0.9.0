@@ -49,9 +49,8 @@ class Nav4(ttk.Frame):
         self.image_browse_button = ttk.Button(self.tab4_row2, text="Browse")
         self.image_browse_button.grid(row=0, column=1, padx=Variables.PAD_NOPAD, pady=10)
 
-        Variables.image_filepath = tk.StringVar()
-        self.image_folderpath_entry = ttk.Entry(self.tab4_row2, textvariable=Variables.image_filepath, width=50)
-        self.image_folderpath_entry.grid(row=0, column=2, padx=Variables.PAD_NOPAD, pady=10)
+        self.image_filepath_entry = ttk.Entry(self.tab4_row2, textvariable=Variables.image_filepath, width=50)
+        self.image_filepath_entry.grid(row=0, column=2, padx=Variables.PAD_NOPAD, pady=10)
 
         self.image_download_button = ttk.Button(self.tab4_row2, text="Save Data")
         self.image_download_button.grid(row=0, column=3, padx=Variables.PAD_NOPAD, pady=10)

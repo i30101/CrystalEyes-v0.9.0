@@ -11,6 +11,8 @@ Splash screen
 import tkinter as tk
 from PIL import Image, ImageTk
 
+from src.variables import Variables
+
 
 class Splash:
     def __init__(self, root):
@@ -36,10 +38,7 @@ class Splash:
         self.background_label = tk.Label(self.root, image=self.background_image)
         self.background_label.place(x=0, y=0, width=self.SPLASH_WIDTH, height=self.SPLASH_HEIGHT)
 
-        # self.frame = tk.Frame(self.root, width=self.SPLASH_WIDTH, height=self.SPLASH_HEIGHT, bg='#272727')
-        # self.frame.place(x=0, y=0)
-
-        self.title = tk.Label(self.root, text="CrystalEyes v0.8.0", fg='white', bg="#272727")
+        self.title = tk.Label(self.root, text=Variables.APP_NAME, fg='white', bg="#272727")
         self.title.configure(font=('Bahnschrift Bold', 16))
         self.title.grid(row=0, column=0, ipadx=10, ipady=10)
 

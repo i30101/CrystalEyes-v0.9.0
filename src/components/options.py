@@ -24,8 +24,9 @@ class Options:
 
         # default options
         self.DEFAULT_OPTIONS = {
-            "ImageFolderpath": (str(Path.home()) + "\\Documents").replace("\\", "/"),
-            "VideoFolderpath": (str(Path.home()) + "\\Documents").replace("\\", "/"),
+            "Theme": "light",
+            "ImageFilepath": (str(Path.home()) + "\\Documents").replace("\\", "/"),
+            "VideoFilepath": (str(Path.home()) + "\\Documents").replace("\\", "/"),
             "ImageGraph1": 0,
             "ImageGraph2": 1,
             "ImageGraph3": 2,
@@ -37,21 +38,20 @@ class Options:
             "Scale": Analysis.DEFAULT_SCALE
         }
 
-        self.read_options()
-
-
-
-    def read_options(self):
-        """ Reads options from file and set options """
-        with open(self.OPTIONS_FILEPATH, 'r') as optionsfile:
-            self.options = json.load(optionsfile)
+        # read options
+        with open(self.OPTIONS_FILEPATH, 'r') as file:
+            try:
+                self.options = json.load(file)
+            except json.JSONDecodeError:
+                # If the file is empty or corrupted, reset to defaults
+                self.options = self.DEFAULT_OPTIONS
 
 
 
     def write_options(self):
         """ Writes options to file """
-        with open(self.OPTIONS_FILEPATH, 'w') as optionsfile:
-            json.dump(self.options, optionsfile, indent=4)
+        with open(self.OPTIONS_FILEPATH, 'w') as file:
+            json.dump(self.options, file, indent=4)
 
 
     def reset_options(self):
@@ -60,24 +60,29 @@ class Options:
         self.write_options()
 
 
+    def get_theme(self) -> str:
+        """ Returns saved theme """
+        return self.options["Theme"]
+
+
     def get_image_path(self) -> str:
         """ Returns filepath for saved image data """
-        return self.options["ImageFolderpath"]
+        return self.options["ImageFilepath"]
 
 
     def get_video_path(self) -> str:
         """ Returns filepath for saved video data """
-        return self.options["VideoFolderpath"]
+        return self.options["VideoFilepath"]
 
 
-    def get_image_graph(self, graph_num) -> int:
+    def get_image_graph(self, graph_num: int) -> int:
         """ Returns variable index of image graph """
         if graph_num < 1 or graph_num > 3:
             raise IndexError("Invalid graph index")
         return self.options[f"ImageGraph{graph_num}"]
 
 
-    def get_video_graph(self, graph_num) -> int:
+    def get_video_graph(self, graph_num: int) -> int:
         """ Returns variable index of video graph """
         if graph_num < 1 or graph_num > 3:
             raise IndexError("Invalid graph index")
@@ -99,17 +104,23 @@ class Options:
         return self.options["Scale"]
 
 
-    def set_image_path(self, new_filepath):
+    def set_theme(self, new_theme: str):
+        """ Sets theme for the application """
+        self.options["Theme"] = new_theme
+        self.write_options()
+
+
+    def set_image_path(self, new_filepath: str):
         """ Sets filepath for saved image data """
-        self.options["ImageFolderpath"] = new_filepath
+        self.options["ImageFilepath"] = new_filepath
 
 
-    def set_video_path(self, new_filepath):
+    def set_video_path(self, new_filepath: str):
         """ Sets filepath for saved video data """
-        self.options["VideoFolderpath"] = new_filepath
+        self.options["VideoFilepath"] = new_filepath
 
 
-    def set_image_graph(self, graph_num, new_index):
+    def set_image_graph(self, graph_num: int, new_index: int):
         """ Sets index of image graphs """
         print(f"new index: {new_index}")
         if graph_num < 1 or graph_num > 3:
@@ -117,7 +128,7 @@ class Options:
         self.options[f"ImageGraph{graph_num}"] = new_index
 
 
-    def set_video_graph(self, graph_num, new_index):
+    def set_video_graph(self, graph_num: int, new_index: int):
         """ Sets index of video graphs """
         print(f"new index: {new_index}")
         if graph_num < 1 or graph_num > 3:

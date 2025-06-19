@@ -1,12 +1,13 @@
 {
-    "ImageFolderpath": "C:/Users/Andrew/Downloads",
-    "VideoFolderpath": "C:/Users/Andrew/Downloads",
+    "Theme": "light",
+    "ImageFilepath": "C:/Users/andrew.kim/Documents",
+    "VideoFilepath": "C:/Users/andrew.kim/Documents",
     "ImageGraph1": 0,
     "ImageGraph2": 1,
     "ImageGraph3": 2,
     "VideoGraph1": 0,
     "VideoGraph2": 1,
-    "VideoGraph3": 4,
+    "VideoGraph3": 2,
     "Px": 808.669,
     "Um": 100,
     "Scale": 0.12366
