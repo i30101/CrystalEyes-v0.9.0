@@ -17,7 +17,7 @@ class MediaContainer:
     """ General class for image container types """
 
     def __init__(self, root):
-        self.root = root;
+        self.root = root
         self.container = ttk.Frame(self.root)
 
 
