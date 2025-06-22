@@ -1,0 +1,7 @@
+# TODO use Nuitka
+
+# TODO crystals per square micrometer
+
+# TODO percent coverage
+
+# TODO update README
