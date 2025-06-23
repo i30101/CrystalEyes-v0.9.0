@@ -11,6 +11,8 @@ Media viewer
 
 import cv2
 
+from src.variables import Variables
+
 from src.containers.empty import EmptyContainer
 from src.containers.image import ImageContainer
 from src.containers.scaler import ScalerContainer
@@ -18,7 +20,7 @@ from src.containers.video import VideoContainer
 from src.containers.viewer import ViewerContainer
 
 
-class Media:
+class Viewer:
     """ Media manager for GUI """
 
     def __init__(self, root, no_media_func: callable, scaler_func: callable):
@@ -35,10 +37,6 @@ class Media:
         self.NO_MEDIA_UPLOADED = 'none'
         self.IMAGE_UPLOADED = 'image'
         self.VIDEO_UPLOADED = 'video'
-
-        # media types
-        self.IMAGE_TYPES = [".jpg", ".png"]
-        self.VIDEO_TYPES = [".mp4", ".avi"]
 
         # what being shown
         self.show_mode = self.SHOW_NO_MEDIA
@@ -82,7 +80,7 @@ class Media:
         first_file = filepaths[0]
 
         filepath_ending = first_file[-4 :]
-        if filepath_ending in self.IMAGE_TYPES:
+        if filepath_ending in Variables.IMAGE_TYPES:
             # check if one image or not
             num_files = len(filepaths)
 
@@ -97,7 +95,7 @@ class Media:
             else:
                 self.uploaded = self.VIDEO_UPLOADED
                 self.show_video(filepaths)
-        elif filepath_ending in self.VIDEO_TYPES:
+        elif filepath_ending in Variables.VIDEO_TYPES:
             raise ValueError("Video not supported")
         else:
             raise ValueError("Invalid media type")

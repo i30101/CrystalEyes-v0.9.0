@@ -133,17 +133,17 @@ class Analysis:
     # ################################ SUMMARIES METHODS ################################ #
 
     def image_dataset_summary(self) -> str:
-        """ Creates summary for image analysis """
+        """ Creates summary for image media """
         output = "\nImage analyzed"
         output += f"\n    Total crystal area: {int(self.total(self.areas_px))} px², {self.total(self.areas_um, 3)} μm²"
-        output += f"\n    Average crystal area: {int(self.average(self.areas_px))} μm², {self.average(self.areas_um, 3)} μm²"
+        output += f"\n    Average crystal area: {int(self.average(self.areas_px))} px², {self.average(self.areas_um, 3)} μm²"
         output += f"\n    Average number of sides: {self.average(self.num_sides, 1)}"
         output += f"\n    Average height to width ratio: {self.average(self.side_ratios, 3)}"
         output += f"\n    Number of contours: {self.num_contours}"
         return output
 
     def video_dataset_summary(self, duration: float, final_temp: float) -> str:
-        """ Creates summary for video analysis """
+        """ Creates summary for video media """
         output = "\nVideo analyzed"
         output += f"\n    Total number of frames: {len(self.num_contours_series)}"
         output += f"\n    Total duration: {duration}s"

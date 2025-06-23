@@ -12,7 +12,8 @@ Options for CrystalEyes
 import json
 from pathlib import Path
 
-from src.analysis.analysis import Analysis
+from src.variables import Variables
+
 
 
 class Options:
@@ -33,9 +34,9 @@ class Options:
             "VideoGraph1": 0,
             "VideoGraph2": 1,
             "VideoGraph3": 2,
-            "Px": Analysis.DEFAULT_PX,
-            "Um": Analysis.DEFAULT_UM,
-            "Scale": Analysis.DEFAULT_SCALE
+            "Px": Variables.DEFAULT_PX,
+            "Um": Variables.DEFAULT_UM,
+            "Scale": Variables.DEFAULT_SCALE
         }
 
         # read options

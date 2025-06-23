@@ -17,9 +17,10 @@ import cv2
 from ctypes import windll
 import pandas as pd
 
-from media import Media
-from src.analysis.analysis import Analysis
+from viewer import Viewer
 from src.variables import Variables
+from src.media.analysis import Analysis
+from src.media.image import AnalyzedImage
 
 from src.components.console import Console
 from src.components.options import Options
@@ -32,6 +33,24 @@ from src.nav.nav4 import Nav4
 from src.nav.nav5 import Nav5
 
 
+windll.shcore.SetProcessDpiAwareness(1)
+
+
+def image_browse():
+    """ User sets folder to save image data """
+    filepath = filedialog.askdirectory()
+    if len(filepath) == 0:
+        return
+    Variables.image_filepath.set(filepath)
+
+
+def video_browse():
+    """ User sets folder to save video data """
+    filepath = filedialog.askdirectory()
+    if len(filepath) == 0:
+        return
+    Variables.video_filepath.set(filepath)
+
 
 class Gui:
     def __init__(self, root):
@@ -39,8 +58,12 @@ class Gui:
         self.root.geometry("1200x800")
         self.root.title(Variables.APP_NAME)
 
-        self.analysis = Analysis()
         self.options = Options()
+
+        # analyzed media
+        self.analyzed_image = None
+        self.analyzed_video = None
+
 
         Variables.image_filepath = tk.StringVar()
         Variables.video_filepath = tk.StringVar()
@@ -85,7 +108,7 @@ class Gui:
         # media panel
         self.media_frame = ttk.Frame(self.paned_window, height=1, padding=(0, 10))
         self.paned_window.add(self.media_frame, weight=10)
-        self.media = Media(self.media_frame, self.open_file, self.set_px_entry)
+        self.media = Viewer(self.media_frame, self.open_file, self.set_px_entry)
 
         # console
         self.console_frame = ttk.Frame(self.paned_window, height=1)
@@ -125,7 +148,7 @@ class Gui:
 
         # tab 1 configs
         self.tab1.open_file_button.config(command=self.open_file)
-        self.tab1.reset_button1.config(command=self.media.show_raw)
+        self.tab1.reset_button1.config(command=self.media.show_no_media)
         self.tab1.clear_button.config(command=self.clear_media)
         self.tab1.theme_button.config(command=self.theme_updated)
         self.tab1.settings_button.config(command=self.settings_reset)
@@ -142,18 +165,17 @@ class Gui:
 
         # tab 3 configs
         self.tab3.reset_button2.config(command=self.media.show_raw)
-        self.tab3.auto_crop_button.config(command=self.auto_crop)
         self.tab3.save_view_button.config(command=self.save_view)
         self.tab3.process_media_button.config(command=self.process_media)
 
         # tab 4 configs
-        self.tab4.image_browse_button.config(command=self.image_browse)
+        self.tab4.image_browse_button.config(command=image_browse)
         Variables.image_filepath.set(self.options.get_image_path())
         Variables.image_filepath.trace_add('write', self.image_filepath_updated)
         self.tab4.image_download_button.config(command=self.image_download)
 
         # tab 5 configs
-        self.tab5.video_browse_button.config(command=self.video_browse)
+        self.tab5.video_browse_button.config(command=video_browse)
         Variables.video_filepath.set(self.options.get_video_path())
         Variables.video_filepath.trace_add('write', self.video_filepath_updated)
         self.tab5.video_download_button.config(command=self.video_download)
@@ -166,7 +188,7 @@ class Gui:
         """ Changes currently displayed tab """
         self.tab_control.select(new_tab)
 
-    def check_tab_status(self, event=None):
+    def check_tab_status(self, _ = None):
         """ What should happen when a tab is selected """
         if not self.media.there_is_media():
             self.media.show_no_media()
@@ -194,6 +216,12 @@ class Gui:
         for graph in self.graphs:
             graph.clear()
 
+    def clear_analyzed_media(self):
+        """ Clears analyzed media """
+        self.analyzed_image = None
+        self.analyzed_video = None
+
+
 
 
 
@@ -203,13 +231,17 @@ class Gui:
         """ User opens new file """
         filepaths = tuple(filedialog.askopenfilenames(filetypes=[(
             "Image and video files",
-            " ".join(self.media.IMAGE_TYPES + self.media.VIDEO_TYPES)
+            " ".join(Variables.IMAGE_TYPES + Variables.VIDEO_TYPES)
         )]))
         num_files = len(filepaths)
+
+        # if no files were selected, do nothing
         if not num_files:
             return
 
-        self.analysis.processed = False
+        # new media was uploaded, so it hasn't been processed yet
+        self.clear_analyzed_media()
+
         self.media.add_media(filepaths)
         self.check_tab_status()
         self.clear_graphs()
@@ -224,6 +256,7 @@ class Gui:
             return
         self.media.show_no_media()
         self.clear_graphs()
+        self.clear_analyzed_media()
         self.console.message("Media cleared")
 
     def theme_updated(self):
@@ -265,9 +298,9 @@ class Gui:
 
     def reset_scale(self):
         """ Resets displayed scale in Scale tab """
-        self.set_scale_entry(Analysis.DEFAULT_SCALE)
-        self.set_px_entry(Analysis.DEFAULT_PX)
-        self.set_um_entry(Analysis.DEFAULT_UM)
+        self.set_scale_entry(Variables.DEFAULT_SCALE)
+        self.set_px_entry(Variables.DEFAULT_PX)
+        self.set_um_entry(Variables.DEFAULT_UM)
 
     def manual_scale(self):
         """ Manually sets scale """
@@ -282,8 +315,8 @@ class Gui:
             return
         self.tab2.scale_input.set(round(scale, 5))
         try:
-            self.analysis.scale = float(self.scale_entry.get())
-        except:
+            Analysis.set_scale(float(self.tab2.scale_entry.get()))
+        except ValueError:
             return
 
     def set_px_entry(self, px: float):
@@ -304,12 +337,11 @@ class Gui:
                 float(self.tab2.px_input.get()),
                 float(self.tab2.um_input.get()))
 
-    def scale_entry_updated(self, arg1, arg2, arg3):
+    def scale_entry_updated(self, _1, _2, _3):
         """ Callback for update to scale entry """
-        inputs = None
         try:
             inputs = self.get_input_values()
-        except:
+        except ValueError:
             self.console.error("non-integer character in scale input")
             return
         if 0 in inputs:
@@ -317,13 +349,11 @@ class Gui:
             return
         self.set_px_entry(inputs[2] / inputs[0])
 
-
-    def px_entry_updated(self, arg1, arg2, arg3):
+    def px_entry_updated(self, _1, _2, _3):
         """ Callback for update to px entry """
-        inputs = None
         try:
             inputs = self.get_input_values()
-        except:
+        except ValueError:
             self.console.error("non-integer character in px input")
             return
         if 0 in inputs:
@@ -332,12 +362,11 @@ class Gui:
         self.set_scale_entry(inputs[2] / inputs[1])
 
 
-    def um_entry_updated(self, arg1, arg2, arg3):
+    def um_entry_updated(self, _1, _2, _3):
         """ Callback for update to um entry """
-        inputs = None
         try:
             inputs = self.get_input_values()
-        except:
+        except ValueError:
             self.console.error("non-integer character in μm entry")
             return
         if 0 in inputs:
@@ -347,18 +376,6 @@ class Gui:
 
     # ################################ TAB 3 METHODS ################################ #
 
-    def auto_crop(self):
-        """ Auto crops media """
-        if not self.media.there_is_media():
-            self.no_media_error()
-            return
-
-        if not self.media.uploaded == self.media.IMAGE_UPLOADED:
-            self.invalid_media_error()
-
-        self.media.update_current_image(self.analysis.default_crop(self.media.current_image))
-        self.check_tab_status()
-
     def save_view(self):
         """ Saves view and updates displayed image """
         if not self.media.there_is_media() or not self.media.uploaded == self.media.IMAGE_UPLOADED:
@@ -367,11 +384,11 @@ class Gui:
         xs, ys = self.media.viewer_container.crop_points()
         if xs == ys == [0, 0]:
             return
-        if xs[1] - xs[0] > Analysis.MAX_X or ys[1] - ys[0] > Analysis.MAX_Y:
+        if xs[1] - xs[0] > Variables.MAX_X or ys[1] - ys[0] > Variables.MAX_Y:
             raise ValueError("Invalid image cropping dimensions: too large for given image, check Gui.save_view")
-        cropped_image = self.analysis.crop(self.media.current_image, xs, ys)
-        # self.media.show_image(cropped_image)
+        cropped_image = Analysis.crop(self.media.current_image, xs, ys)
         self.media.update_current_image(cropped_image)
+
 
     def process_media(self):
         """ Process media, updates displayed image and graphs """
@@ -380,20 +397,22 @@ class Gui:
             return
 
         # update graphs accordingly
-        if self.media.uploaded == self.media.IMAGE_UPLOADED:
-            processed_image = self.analysis.image_show_contours(self.media.current_image)
 
-            # do nothing if processing results yielded nothing
-            if not self.analysis.processed:
-                self.console.message("No results after predicting image")
-                return
+        # if the media uploaded was an image
+        if self.media.uploaded == self.media.IMAGE_UPLOADED:
+            self.analyzed_image = Analysis.analyze_image(self.media.current_image)
+
+            # TODO handle condition for when there are no analysis results
+            # (when self.analyzed_image is None)
 
             # show processed image
-            self.media.update_current_image(processed_image)
+            self.media.update_current_image(self.analyzed_image.image)
             self.update_graphs_image()
-            self.console.update(self.analysis.image_dataset_summary())
+            self.console.update(self.analyzed_image.dataset_summary())
             self.console.add_newline = True
 
+
+        # if the media uploaded was a video
         elif self.media.uploaded == self.media.VIDEO_UPLOADED:
             self.update_graphs_video()
             self.console.update(self.analysis.video_dataset_summary(self.time_data[-1], self.temperature_data[-1]))
@@ -414,65 +433,67 @@ class Gui:
 
     # ################################ TAB 4 METHODS ################################ #
 
-    def image_browse(self):
-        """ User sets folder to save image data """
-        filepath = filedialog.askdirectory()
-        if len(filepath) == 0:
-            return
-        Variables.image_filepath.set(filepath)
-
-    def image_filepath_updated(self, arg1, arg2, arg3):
+    def image_filepath_updated(self, _1, _2, _3):
         """ Callback when image filepath is updated """
         self.options.set_image_path(Variables.image_filepath.get())
 
     def image_download(self):
         """ User wants to download image data """
+
+        # there is no media
         if not self.media.there_is_media():
             self.no_media_error()
             return
 
-        if not self.media.uploaded == self.media.IMAGE_UPLOADED:
+        # invalid media type (image/video type error)
+        if self.media.uploaded != self.media.IMAGE_UPLOADED:
             self.invalid_media_error()
-            return
+            raise ValueError("Invalid media type")
 
-        if not self.analysis.processed:
-            self.update_graphs_image()
+        # if image hasn't been analyzed, process it
+        if not self.analyzed_image:
+            self.process_media()
 
         filepath = self.media.image_filepath
         filepath = f"{Variables.image_filepath.get()}{filepath[filepath.rindex('/'): filepath.rindex('.')]}.xlsx"
 
-        data = {
-            "Contour": [i for i in range(self.analysis.num_contours)],
-            "Area in px²": self.analysis.areas_px,
-            "Area in μm²": self.analysis.areas_um,
-            "Number of sides": self.analysis.num_sides,
-            "Side ratio": self.analysis.side_ratios
-        }
+        try:
+            image_df = self.analyzed_image.to_df()
+            image_df.to_excel(filepath)
+            self.console.message(f"Image data successfully saved to '{filepath}'")
+        except IOError:
+            self.console.error(f"Error saving image data to '{filepath}'")
+            return
 
-        image_df = pd.DataFrame(data)
-        image_df.to_excel(filepath)
-        self.console.message(f"Image data successfully saved to '{filepath}'")
 
     def update_graphs_image(self):
+        """ Updates graph to show image data """
         for n, combo in enumerate(self.tab4.image_combos):
             self.options.set_image_graph(n + 1, Variables.IMAGE_OPTIONS.index(combo.get()))
 
-        """ Updates graphs to show image data """
-        if not self.media.there_is_media() or not self.media.uploaded == self.media.IMAGE_UPLOADED:
+        # there is no media
+        if not self.media.there_is_media():
             return
 
-        if not self.analysis.processed:
+        # invalid media type (image/video type error)
+        if self.media.uploaded != self.media.IMAGE_UPLOADED:
+            self.invalid_media_error()
+            raise ValueError("Invalid media type")
+
+        # do nothing if image hasn't been analyzed
+        if not self.analyzed_image:
             return
 
-        for n, combo in enumerate(self.image_combos):
+        for n, combo in enumerate(self.tab4.image_combos):
             if combo.get() == Variables.IMAGE_OPTIONS[0]:
-                self.graphs[n].histogram("Area in px²", "px²", self.analysis.areas_px)
+                self.graphs[n].histogram("Area in px²", "px²", self.analyzed_image.areas_px)
             elif combo.get() == Variables.IMAGE_OPTIONS[1]:
-                self.graphs[n].histogram("Area in μm²", "μm²", self.analysis.areas_um)
-            elif combo.get() == Variables.IMAGE_OPTIONS[2]:
-                self.graphs[n].histogram("Length to width ratio", "Ratio", self.analysis.side_ratios)
-            elif combo.get() == Variables.IMAGE_OPTIONS[3]:
-                self.graphs[n].histogram("Number of sides", "Sides", self.analysis.num_sides)
+                self.graphs[n].histogram("Area in μm²", "μm²", self.analyzed_image.areas_um)
+            # TODO display other data
+            # elif combo.get() == Variables.IMAGE_OPTIONS[2]:
+            #     self.graphs[n].histogram("Length to width ratio", "Ratio", self.analysis.side_ratios)
+            # elif combo.get() == Variables.IMAGE_OPTIONS[3]:
+            #     self.graphs[n].histogram("Number of sides", "Sides", self.analysis.num_sides)
             else:
                 raise ValueError("Invalid image Combo value")
 
@@ -484,15 +505,8 @@ class Gui:
 
     # ################################ TAB 5 METHODS ################################ #
 
-    def video_browse(self):
-        """ User sets folder to save video data """
-        filepath = filedialog.askdirectory()
-        if len(filepath) == 0:
-            return
-        Variables.video_filepath.set(filepath)
-
-    def video_filepath_updated(self, arg1, arg2, arg3):
-        """ Callback when video folderpath is updated """
+    def video_filepath_updated(self, _1, _2, _3):
+        """ Callback when video filepath is updated """
         self.options.set_video_path(Variables.video_filepath.get())
 
     def video_download(self):
@@ -556,7 +570,7 @@ class Gui:
 
                 self.temperature_data.append(image_data[1])
 
-            # self.analysis.analyze_video(cropped_images)
+            # self.media.analyze_video(cropped_images)
             self.analysis.analyze_cellpose(self.media.video_container.image_filepaths)
 
         # check combos and update graphs
@@ -572,7 +586,7 @@ class Gui:
             elif combo.get() == Variables.VIDEO_OPTIONS[3]:
                 self.graphs[n].scatterplot("Temperature", "°C", self.time_data, self.temperature_data)
             elif combo.get() == Variables.VIDEO_OPTIONS[4]:
-                self.graphs[n].scatterplot("# of sides", "# of sidess", self.time_data,
+                self.graphs[n].scatterplot("# of sides", "# of sides", self.time_data,
                                            self.analysis.average_sides_series)
             else:
                 raise ValueError("Invalid image Combo value")

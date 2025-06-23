@@ -27,14 +27,11 @@ class Nav3(ttk.Frame):
         self.reset_button2 = ttk.Button(self.tab3_row1, text="Reset Media")
         self.reset_button2.grid(row=0, column=0, padx=Variables.PAD_NOPAD, pady=Variables.PAD_NOPAD)
 
-        self.auto_crop_button = ttk.Button(self.tab3_row1, text="Auto Crop")
-        self.auto_crop_button.grid(row=0, column=1, padx=Variables.PAD_NOPAD, pady=Variables.PAD_NOPAD)
-
         self.save_view_button = ttk.Button(self.tab3_row1, text="Save View")
-        self.save_view_button.grid(row=0, column=2, padx=Variables.PAD_NOPAD, pady=Variables.PAD_NOPAD)
+        self.save_view_button.grid(row=0, column=1, padx=Variables.PAD_NOPAD, pady=Variables.PAD_NOPAD)
 
         self.process_media_button = ttk.Button(self.tab3_row1, text="Process media")
-        self.process_media_button.grid(row=0, column=3, padx=Variables.PAD_NOPAD, pady=Variables.PAD_NOPAD)
+        self.process_media_button.grid(row=0, column=2, padx=Variables.PAD_NOPAD, pady=Variables.PAD_NOPAD)
 
 
         self.tab3_row2 = ttk.Frame(self)
