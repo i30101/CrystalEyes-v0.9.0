@@ -14,7 +14,8 @@ import cv2
 import numpy as np
 # TODO find a way to not use pytesseract
 from datetime import datetime
-# from cellpose import models, io
+
+from cellpose import models, io
 
 from src.media.image import AnalyzedImage
 from src.media.video import AnalyzedVideo
@@ -29,7 +30,7 @@ from src.variables import Variables
 class Analysis:
     """ Image analyzer """
 
-    # model = models.Cellpose(gpu=False, model_type='cyto')
+    model = models.Cellpose(gpu=False, model_type='cyto')
 
     model = None
 
@@ -88,6 +89,9 @@ class Analysis:
         # processed image that will be used to display contours
         processed_image = image.copy()
 
+        # calculate area of image
+        area_px = len(image) * len(image[0])
+
         contours = Analysis.get_contours(image)
 
         # list of areas of contours
@@ -109,37 +113,48 @@ class Analysis:
             # draw filled contour
             cv2.drawContours(processed_image, [contour], -1, color=(0, 0, 0), thickness=cv2.FILLED)
 
+        # calculate crystals per square micrometer
+        crystals_per_um2 = round(len(contours) / area_px, 3)
+
+        # calculate  coverage of crystals
+        coverage = round(Analysis.total(areas_px) / area_px, 3)
+
+
+
         # TODO check if resulting image is the same as the original
         # probably throw an error if that's the case
 
-        # TODO add temperature and timestamp to AnalyzedImage
+        # TODO compute temperature and timestamp
+
         return AnalyzedImage(
             filename[filename.rindex("/"): filename.rindex(".")],
             datetime(0, 0, 0),
             0,
             processed_image,
             areas_px,
-            areas_um
+            areas_um,
+            crystals_per_um2,
+            coverage
         )
 
-    # TODO create method to analyze videos
+
     @staticmethod
     def analyze_video(image_series: list[np.ndarray], filename: str) -> AnalyzedVideo:
         timestamps = []
         seconds = []
         temperatures = []
         images = []
+        contours = []
         average_areas_px = []
         average_areas_um = []
+        densities = []
+        coverages = []
 
         # first image analyzed first to get starting point
         first_image = Analysis.analyze_image(image_series[0])
+
+        # starting time of samples
         timestamps.append(first_image.timestamp)
-        seconds.append(0)
-        temperatures.append(first_image.temperature)
-        images.append(first_image.image)
-        average_areas_px.append(Analysis.average(first_image.areas_px))
-        average_areas_um.append(Analysis.average(first_image.areas_um))
 
         for n, image in enumerate(image_series):
             if n == 0:
@@ -147,9 +162,44 @@ class Analysis:
             else:
                 analyzed_image = Analysis.analyze_image(image)
 
+            # add timestamp
             timestamps.append(analyzed_image.timestamp)
-            seconds.append()
 
+            # add time difference in seconds
+            seconds.append(int((first_image.timestamp - analyzed_image.timestamp).total_seconds()))
+
+            # add temperature
+            temperatures.append(analyzed_image.temperature)
+            
+            # add image
+            images.append(analyzed_image.image)
+
+            # add number of contours
+            contours.append(analyzed_image.num_contours)
+            
+            # add average area in square pixels
+            average_areas_px.append(Analysis.average(analyzed_image.areas_px))
+
+            # add average area in square micrometers
+            average_areas_um.append(Analysis.average(analyzed_image.areas_um))
+
+            # add crystal density for each image
+            densities.append(analyzed_image.density)
+
+            # add coverage ratio for each image
+            coverages.append(analyzed_image.coverage)
+
+        return AnalyzedVideo(
+            filename[filename.rindex("/"): filename.rindex(".")],
+            timestamps,
+            seconds,
+            temperatures,
+            images,
+            average_areas_px,
+            average_areas_um,
+            densities,
+            coverages
+        )
 
 
 

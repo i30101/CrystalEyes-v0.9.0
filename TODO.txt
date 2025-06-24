@@ -1,9 +1,11 @@
-# TODO use Nuitka
+TODO use Nuitka
 
-# TODO crystals per square micrometer
+TODO crystals per square micrometer
 
-# TODO percent coverage
+TODO percent coverage
 
-# TODO update README
+TODO update README
 
-# TODO add LDF file support
+TODO add LDF file support
+
+TODO change variables displayed in GUI

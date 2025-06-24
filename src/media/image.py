@@ -24,7 +24,9 @@ class AnalyzedImage:
                  temp: float,
                  img: np.ndarray,
                  a_px: list[int],
-                 a_um: list[float] ):
+                 a_um: list[float],
+                 den: float,
+                 cov: float):
 
         """
         Initializes an analyzed image object
@@ -34,6 +36,8 @@ class AnalyzedImage:
         :param img: image with contours drawn
         :param a_px: list of areas in pixels
         :param a_um: list of areas in square micrometers
+        :param den: number of crystals per square micrometer
+        :param cov: ratio of sample image that is occupied by crystals
         """
 
         self.filename = fn
@@ -42,10 +46,9 @@ class AnalyzedImage:
         self.image = img
         self.areas_px = a_px
         self.areas_um = a_um
+        self.density = den
+        self.coverage = cov
         self.num_contours = len(a_px)
-
-        # TODO add temperature
-        # TODO add timestamp
 
 
     def dataset_summary(self) -> str:
@@ -60,7 +63,7 @@ class AnalyzedImage:
 
 
     def to_df(self) -> pd.DataFrame:
-        """ Converts data to DataFrame """
+        """ Converts image data to DataFrame """
         data = {
             "File name": [self.filename],
             "Timestamp": [self.timestamp.strftime('%Y-%m-%d %H:%M:%S')],

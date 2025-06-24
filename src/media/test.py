@@ -1,28 +1,28 @@
-import os
-os.environ["PYTORCH_NO_PIN_MEMORY"] = "1"
-
 import easyocr
-import torch
-
-IMAGE_FILEPATH = r"C:\Users\andrew.kim\Documents\CrystalEyes-v0.9.0\assets\sucrose-small.jpg"
+import time
 
 
-print("Making model")
-try:
-    print("torch version:", torch.__version__)
-    print("CUDA available:", torch.cuda.is_available())
-    reader = easyocr.Reader(['en'], gpu=torch.cuda.is_available())
-    # Force pin_memory=False for all dataloaders (monkey-patch)
-    for attr in dir(reader):
-        obj = getattr(reader, attr)
-        if hasattr(obj, 'pin_memory'):
-            obj.pin_memory = False
-    print("Reading text")
-    result = reader.readtext(IMAGE_FILEPATH)
-    # print("result: ", result)
-except Exception as e:
-    print("Exception occurred:", e)
+def extract_text_from_image(image_path):
+    # Create an EasyOCR Reader instance (no GPU)
+    reader = easyocr.Reader(['en'], gpu=False)
 
-print("the end")
+    # Start timing
+    start_time = time.time()
 
+    # Read text from image
+    results = reader.readtext(image_path)
 
+    # End timing
+    end_time = time.time()
+    duration = end_time - start_time
+
+    # Print extracted text
+    print("Detected Text:")
+    for bbox, text, confidence in results:
+        print(f"• {text} (Confidence: {confidence:.2f})")
+
+    # Print duration
+    print(f"\nText extraction duration: {duration:.2f} seconds")
+
+if __name__ == "__main__":
+    extract_text_from_image(r"C:\Users\andre\Documents\Analysis - IRI\BSA 0.12mg ready\Image819.jpg")
