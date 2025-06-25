@@ -15,7 +15,7 @@ import numpy as np
 # TODO find a way to not use pytesseract
 from datetime import datetime
 
-from cellpose import models, io
+# from cellpose import models, io
 
 from src.media.image import AnalyzedImage
 from src.media.video import AnalyzedVideo
@@ -30,7 +30,7 @@ from src.variables import Variables
 class Analysis:
     """ Image analyzer """
 
-    model = models.Cellpose(gpu=False, model_type='cyto')
+    # model = models.Cellpose(gpu=False, model_type='cyto')
 
     model = None
 

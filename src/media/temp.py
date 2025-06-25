@@ -245,7 +245,7 @@ class Analysis:
 
         # return zeroes if no shapes detected
         if num_objects == 0:
-            return (0, 0, 0)
+            return 0, 0, 0
 
         area_sum = 0
         sides_sum = 0
